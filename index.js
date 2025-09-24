@@ -74,7 +74,7 @@ app.use(cookieParser());
 
 // Rate Limiting - Different limits for production
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === "production" ? 100 : 1000,
   message: "Too many requests from this IP, please try again later",
   standardHeaders: true,
@@ -84,14 +84,14 @@ app.use("/api", limiter);
 
 // CORS setup for production
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? process.env.CLIENT_URL
-      : ["http://localhost:3000", "http://localhost:5173"],
+  origin: process.env.NODE_ENV === "production" 
+    ? process.env.CLIENT_URL 
+    : ["http://localhost:3000", "http://localhost:5173"],
   credentials: true,
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+
 
 // CSRF protection - disable for API routes that need to work with external services
 const csrfProtection = csrf({
@@ -149,10 +149,38 @@ app.use(notFoundMiddleWare);
 app.use(errorMiddleware);
 
 // DB connection with better error handling
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("DB connection failed", err));
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("Connected to MongoDB");
+  } catch (error) {
+    console.error(" DB Connection Error:", error);
+    process.exit(1);
+  }
+};
 
-// Instead of app.listen, just export
-export default app;
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  console.log("Received SIGINT. Closing server gracefully...");
+  await mongoose.connection.close();
+  process.exit(0);
+});
+
+// Start server
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
