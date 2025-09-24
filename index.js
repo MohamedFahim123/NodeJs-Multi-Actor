@@ -149,38 +149,10 @@ app.use(notFoundMiddleWare);
 app.use(errorMiddleware);
 
 // DB connection with better error handling
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.error(" DB Connection Error:", error);
-    process.exit(1);
-  }
-};
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("DB connection failed", err));
 
-// Graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Received SIGINT. Closing server gracefully...");
-  await mongoose.connection.close();
-  process.exit(0);
-});
-
-// Start server
-const startServer = async () => {
-  try {
-    await connectDB();
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
-
-startServer();
+// Instead of app.listen, just export
+export default app;
