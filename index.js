@@ -18,6 +18,7 @@ import {
   userRouter,
 } from "./store.routes.js";
 import { PORT as DeclaredPort } from "./utils/variables.js";
+import { connectDB } from "./utils/db.js";
 
 // Load environment variables
 dotenv.config();
@@ -149,10 +150,13 @@ app.use(notFoundMiddleWare);
 app.use(errorMiddleware);
 
 // DB connection with better error handling
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("DB connection failed", err));
+(async () => {
+  await connectDB();
+})();
+// mongoose
+//   .connect(process.env.MONGO_URL)
+//   .then(() => console.log("Connected to MongoDB"))
+//   .catch((err) => console.error("DB connection failed", err));
 
 // Instead of app.listen, just export
 export default app;
