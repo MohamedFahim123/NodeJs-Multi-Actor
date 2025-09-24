@@ -12,7 +12,9 @@ const createTransporter = () => {
 };
 
 export const generateOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
+  const buffer = crypto.randomBytes(3);
+  const otp = (buffer.readUIntBE(0, 3) % 900000) + 100000;
+  return otp.toString();
 };
 
 export const sendOTPEmail = async (email, otp) => {
