@@ -17,8 +17,8 @@ import {
   profileRoute,
   userRouter,
 } from "./store.routes.js";
-import { PORT as DeclaredPort } from "./utils/variables.js";
 import { connectDB } from "./utils/db.js";
+import { PORT as DeclaredPort } from "./utils/variables.js";
 
 // Load environment variables
 dotenv.config();
@@ -73,7 +73,7 @@ app.use(
 app.use(sanitizeMongoData);
 app.use(cookieParser());
 
-// Rate Limiting - Different limits for production
+// Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === "production" ? 100 : 1000,
@@ -83,7 +83,7 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-// CORS setup for production
+// CORS setup
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -94,7 +94,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// CSRF protection - disable for API routes that need to work with external services
+// CSRF protection
 const csrfProtection = csrf({
   cookie: {
     secure: process.env.NODE_ENV === "production",
@@ -106,7 +106,7 @@ const csrfProtection = csrf({
 // Webhook must come BEFORE express.json()
 app.use("/api/checkout/webhook", express.raw({ type: "application/json" }));
 
-// JSON middleware for other routes
+// JSON middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -115,9 +115,12 @@ app.get("/", (req, res) => {
   res.json({
     message: "E-Commerce API is running!",
     timestamp: new Date().toISOString(),
+    database:
+      mongoose.connection.readyState === 1 ? "Connected" : "Disconnected",
     environment: process.env.NODE_ENV,
   });
 });
+
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -136,22 +139,36 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/checkout", checkoutRouter);
 app.use("/api", profileRoute);
 
-// Apply CSRF only to routes that need it (avoid for webhooks, APIs consumed by mobile apps, etc.)
+// CSRF routes
 app.post("/api/secure-action", csrfProtection, (req, res) => {
   res.json({ message: "Secure action completed!" });
 });
+
 app.get("/api/csrf-token", csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// Route not found
+// Error handling
 app.use(notFoundMiddleWare);
-// Global error handler
 app.use(errorMiddleware);
 
-// DB connection with better error handling
-(async () => {
-  await connectDB();
-})();
+// DB connection and server start
+const startServer = async () => {
+  try {
+    await connectDB();
 
+    app.listen(PORT, () => {
+      // FIXED: Added PORT parameter
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+// Export for Vercel
 export default app;
