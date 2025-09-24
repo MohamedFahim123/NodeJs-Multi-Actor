@@ -6,7 +6,6 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import mongoose from "mongoose";
-import xss from "xss";
 import errorMiddleware from "./middlewares/error.js";
 import notFoundMiddleWare from "./middlewares/notfound.js";
 import {
@@ -71,7 +70,6 @@ app.use(
 );
 
 app.use(sanitizeMongoData);
-app.use(xss());
 app.use(cookieParser());
 
 // Rate Limiting - Different limits for production
@@ -86,7 +84,10 @@ app.use("/api", limiter);
 
 // CORS setup for production
 const corsOptions = {
-  origin: null,
+  origin:
+    process.env.NODE_ENV === "production"
+      ? process.env.CLIENT_URL
+      : ["http://localhost:3000", "http://localhost:5173"],
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -144,10 +145,6 @@ app.get("/api/csrf-token", csrfProtection, (req, res) => {
 
 // Route not found
 app.use(notFoundMiddleWare);
-// 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
 // Global error handler
 app.use(errorMiddleware);
 
