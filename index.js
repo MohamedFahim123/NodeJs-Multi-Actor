@@ -168,7 +168,8 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (process.env.NODE_ENV === "development") startServer();
+else await connectDB();
 
 // Export for Vercel
 export default app;
