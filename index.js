@@ -6,8 +6,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import mongoose from "mongoose";
-import xss from "xss-clean";
-
+import xss from "xss";
 import errorMiddleware from "./middlewares/error.js";
 import notFoundMiddleWare from "./middlewares/notfound.js";
 import {
@@ -87,10 +86,7 @@ app.use("/api", limiter);
 
 // CORS setup for production
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? [process.env.CLIENT_URL]
-      : ["http://localhost:3000", "http://localhost:5173"],
+  origin: null,
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -149,12 +145,11 @@ app.get("/api/csrf-token", csrfProtection, (req, res) => {
 // Route not found
 app.use(notFoundMiddleWare);
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+app.use("*", (req, res) => {
+  res.status(404).json({ message: "Route not found" });
 });
 // Global error handler
 app.use(errorMiddleware);
-
 
 // DB connection with better error handling
 const connectDB = async () => {
