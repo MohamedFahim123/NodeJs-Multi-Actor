@@ -152,24 +152,14 @@ app.get("/api/csrf-token", csrfProtection, (req, res) => {
 app.use(notFoundMiddleWare);
 app.use(errorMiddleware);
 
-// DB connection and server start
-const startServer = async () => {
-  try {
-    await connectDB();
+// DB connection
+await connectDB();
 
-    app.listen(PORT, () => {
-      // FIXED: Added PORT parameter
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
+// Only start server locally (not needed in Vercel)
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
-if (process.env.NODE_ENV === "development") startServer();
-else await connectDB();
-
-// Export for Vercel
 export default app;
