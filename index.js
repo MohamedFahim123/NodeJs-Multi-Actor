@@ -153,10 +153,5 @@ app.use(errorMiddleware);
 (async () => {
   await connectDB();
 })();
-// mongoose
-//   .connect(process.env.MONGO_URL)
-//   .then(() => console.log("Connected to MongoDB"))
-//   .catch((err) => console.error("DB connection failed", err));
 
-// Instead of app.listen, just export
 export default app;
